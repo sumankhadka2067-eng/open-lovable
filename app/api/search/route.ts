@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+/**
+ * This route originally used Firecrawl to search the web.
+ * Since Firecrawl is disabled, we will return an empty result set 
+ * or a placeholder message to prevent frontend errors.
+ */
 export async function POST(req: NextRequest) {
   try {
     const { query } = await req.json();
@@ -8,43 +13,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 });
     }
 
-    // Use Firecrawl search to get top 10 results with screenshots
-    const searchResponse = await fetch('https://api.firecrawl.dev/v1/search', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.FIRECRAWL_API_KEY}`,
-      },
-      body: JSON.stringify({
-        query,
-        limit: 10,
-        scrapeOptions: {
-          formats: ['markdown', 'screenshot'],
-          onlyMainContent: true,
-        },
-      }),
+    // Since Firecrawl is removed, we return an empty array.
+    // This ensures the UI doesn't break but tells the user search is unavailable.
+    const results: any[] = [];
+
+    // Optional: If you want to integrate a free Search API in the future (like DuckDuckGo or Tavily),
+    // you would place that fetch logic here.
+
+    return NextResponse.json({ 
+      results,
+      message: "Web search is currently disabled (Firecrawl removed)." 
     });
 
-    if (!searchResponse.ok) {
-      throw new Error('Search failed');
-    }
-
-    const searchData = await searchResponse.json();
-    
-    // Format results with screenshots and markdown
-    const results = searchData.data?.map((result: any) => ({
-      url: result.url,
-      title: result.title || result.url,
-      description: result.description || '',
-      screenshot: result.screenshot || null,
-      markdown: result.markdown || '',
-    })) || [];
-
-    return NextResponse.json({ results });
   } catch (error) {
-    console.error('Search error:', error);
+    console.error('Search route error:', error);
     return NextResponse.json(
-      { error: 'Failed to perform search' },
+      { error: 'Failed to perform search operations' },
       { status: 500 }
     );
   }
